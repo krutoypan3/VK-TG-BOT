@@ -22,7 +22,7 @@ if __name__ == '__main__':
                 if event.message.from_id > 0:  # Проверка на бота
                     def main(event_main):
                         pass
-                    
+
                     Func.thread_start(main, event)
 
 
