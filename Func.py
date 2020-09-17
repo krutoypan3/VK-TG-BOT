@@ -6,7 +6,7 @@ import random
 import time
 import urllib3
 import vk_api
-import SQL_DB
+#import SQL_DB
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
@@ -22,11 +22,11 @@ client_secret = os.environ.get("client_secret")
 vk_app_id = int(os.environ.get("vk_app_id"))
 
 print("Бот запускается...")
-group_id = '196288744'  # Указываем id сообщества
+group_id = '198599965'  # Указываем id сообщества
 threads = list()
 eventhr = []
 kolpot = -1
-group_sob = "@bratikbot"  # Указываем короткое имя бота (если нет то id)
+group_sob = "@198599965"  # Указываем короткое имя бота (если нет то id)
 group_name = "Братик"  # Указываем название сообщества
 
 # Авторизация под именем сообщества
@@ -53,6 +53,9 @@ try:
         kolpot += 1
         eventhr.append(kolpot)
         x.start()
+
+    def send_msg(peerid, ms_g):
+        vk.messages.send(peer_id=peerid, random_id=0, message=ms_g)
 
 except ValueError:
     print(ValueError)
