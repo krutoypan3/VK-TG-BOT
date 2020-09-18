@@ -1,6 +1,6 @@
 import os
 import time
-
+import Dict
 import requests
 import Func
 from Func import longpoll
@@ -24,12 +24,15 @@ if __name__ == '__main__':
             if event.type == VkBotEventType.MESSAGE_NEW:  # Проверка на приход сообщения
                 if event.message.from_id > 0:  # Проверка на бота
                     def main(event_main):
+                        text = event_main.message.text.lower()  # Что написал
                         count_attach = len(event_main.message["attachments"])  # Кол-во вложений
                         # print(event_main)
                         if count_attach > 0:  # Есть ли вложения
                             Func.save_file(event_main, count_attach)
-
-
+                        if text in Dict.func_answer:
+                            Func.thread_start(Dict.func_answer[text], event_main)
+                        if text in Dict.keyboard:
+                            Func.thread_start(Dict.keyboard[text], event_main)
                     Func.thread_start(main, event)
 
 
