@@ -14,7 +14,7 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 from dotenv import load_dotenv
-
+import Dict
 load_dotenv()
 
 API_GROUP_KEY = os.environ.get("API_GROUP_KEY")
@@ -129,11 +129,44 @@ try:
             keyboard = VkKeyboard(one_time=False)
             # keyboard.add_button('аниме(в разработке)', color=VkKeyboardColor.NEGATIVE)
             keyboard.add_button('Валюта', color=VkKeyboardColor.POSITIVE)
-            keyboard.add_button('Моё', color=VkKeyboardColor.NEGATIVE)
+            keyboard.add_button('Мои файлы', color=VkKeyboardColor.NEGATIVE)
             keyboard.add_line()  # Отступ строки
             keyboard.add_button('Погода', color=VkKeyboardColor.PRIMARY)
             vk.messages.send(peer_id=my_peer, random_id=get_random_id(),
                              keyboard=keyboard.get_keyboard(), message='Выберите команду:')
+
+    def my_files_keyboard(event_func):
+        my_peer = event_func.message.peer_id
+        if lich_or_beseda(my_peer):
+            keyboard = VkKeyboard(one_time=False)
+            # keyboard.add_button('аниме(в разработке)', color=VkKeyboardColor.NEGATIVE)
+            keyboard.add_button('аудио', color=VkKeyboardColor.POSITIVE)
+            keyboard.add_button('фото', color=VkKeyboardColor.POSITIVE)
+            keyboard.add_button('видео', color=VkKeyboardColor.POSITIVE)
+            keyboard.add_line()  # Отступ строки
+            keyboard.add_button('документы', color=VkKeyboardColor.POSITIVE)
+            keyboard.add_button('гс', color=VkKeyboardColor.POSITIVE)
+            keyboard.add_button('граффити', color=VkKeyboardColor.POSITIVE)
+            keyboard.add_line()  # Отступ строки
+            keyboard.add_button('главная', color=VkKeyboardColor.NEGATIVE)
+            vk.messages.send(peer_id=my_peer, random_id=get_random_id(),
+                             keyboard=keyboard.get_keyboard(), message='Выберите команду:')
+
+    def my_files_keyboard_content(event_func):
+        my_peer = event_func.message.peer_id
+        if lich_or_beseda(my_peer):
+            keyboard = VkKeyboard(one_time=False)
+            keyboard.add_button('как скачать?', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_button('как отправить?', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_line()  # Отступ строки
+            keyboard.add_button('мои файлы', color=VkKeyboardColor.NEGATIVE)
+            vk.messages.send(peer_id=my_peer, random_id=get_random_id(),
+                             keyboard=keyboard.get_keyboard(), message='Выберите команду:')
+    def how_download(event_func):
+        send_msg(event_func.message.peer_id, 'Команда для загрузки файлов:\n"скачать тип/номер"'
+                                             '\nНапример: скачать photo/3')
+    def how_unload(event_func):
+        send_msg(event_func.message.peer_id, 'Просто отправьте документ боту и он сохранит его')
 
     def sumbol_windows(what):
         return re.sub(r'[:*?"<|>]', "", what)
@@ -145,12 +178,9 @@ try:
                 os.makedirs(r'content/users/' + str(event_func.message.from_id) + '/' + content_type + '/')
             except FileExistsError:  # Если есть - то есть
                 pass
-            if content_type == "doc":  # Если это видео
+            if content_type == "doc":
                 send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - документ")
-                url = vk_polzovat.docs.getById(docs=
-                                               str(event_func.message["attachments"][i]["doc"]["owner_id"]) + '_' +
-                                               str(event_func.message["attachments"][i]["doc"]["id"]) + '_' +
-                                               str(event_func.message["attachments"][i]["doc"]["access_key"]))[0]["url"]
+                url = event_func.message["attachments"][i]["doc"]["url"]
                 f = open(r'content/users/' + str(event_func.message.from_id) + '/doc/' +
                          sumbol_windows(str(event_func.message["attachments"][i]["doc"]["title"])), "wb")
                 ufr = requests.get(url)  # делаем запрос
@@ -172,13 +202,9 @@ try:
                 send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " успешно сохранен")
 
             elif content_type == "photo":  # Если это фото
-                send_msg(event_func.message["peer_id"],
-                         "Файл №" + str(i + 1) + " тип - фотография")
-                url = vk_polzovat.photos.getById(
-                    photos=str(event_func.message["attachments"][i]["photo"]["owner_id"]) + '_' +
-                    str(event_func.message["attachments"][i]["photo"]["id"]) + '_' +
-                    str(event_func.message["attachments"][i]["photo"]["access_key"])
-                )[0]["sizes"][6]["url"]
+                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - фотография")
+                url = event_func.message["attachments"][i]["photo"]
+                url = url["sizes"][len(url["sizes"]) - 1]["url"]
                 f = open(r'' + str('content/users/' + str(event_func.message.from_id) + '/photo/' +
                                    str(time.time()) + '.png'), "wb")
                 ufr = requests.get(url)  # делаем запрос
@@ -191,11 +217,7 @@ try:
 
             elif content_type == "graffiti":
                 send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - граффити")
-                url = vk_polzovat.docs.getById(docs=
-                                               str(event_func.message["attachments"][i]["graffiti"]["owner_id"]) + '_' +
-                                               str(event_func.message["attachments"][i]["graffiti"]["id"]) + '_' +
-                                               str(event_func.message["attachments"][i]["graffiti"]["access_key"])
-                                               )[0]["url"]
+                url = event_func.message["attachments"][i]["graffiti"]["url"]
                 f = open(r'content/users/' + str(event_func.message.from_id) + '/graffiti/' +
                          sumbol_windows(str(event_func.message["attachments"][i]["graffiti"]["id"])) + '.png', "wb")
                 ufr = requests.get(url)  # делаем запрос
@@ -204,33 +226,106 @@ try:
                 send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + ' - ' +
                          str(event_func.message["attachments"][i]["graffiti"]["id"]) + " успешно сохранен")
 
+            elif content_type == "audio_message":
+                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - голосовое сообщение")
+                url = event_func.message["attachments"][i]["audio_message"]["link_mp3"]
+                title = time.time()
+                f = open(r'content/users/' + str(event_func.message.from_id) +
+                         '/audio_message/' + str(title) + '.mp3', "wb")
+                ufr = requests.get(url)  # делаем запрос
+                f.write(ufr.content)  # записываем содержимое в файл; как видите - content запроса
+                f.close()
+                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " успешно сохранен")
+
 
     def my_files_list(folder, event_func):
-        files = os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder)
-        msg = 'users/' + str(event_func.message.from_id) + '/' + folder + '\n'
-        for i in range(len(files)):
-            msg += folder + str(i) + ' — ' + files[i] + '\n'
-        send_msg(event_func.message.peer_id, msg)
+        try:
+            files = os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder)
+            if folder == '':
+                smile = '/'
+                smile_2 = '&#128194;'
+            else:
+                smile = '/&#128194;'
+                smile_2 = '&#128193;'
+            msg = '&#128193;users/' + smile_2 + str(event_func.message.from_id) + smile + folder + '\n\n'
+            smile_3 = Dict.smile_list[folder]
+            for i in range(len(files)):
+                if len(files[i]) > 27:
+                    new = ''
+                    for j in range(len(files[i])):
+                        if j < 16:
+                            new += files[i][j]
+                        elif j == 17:
+                            new += '...'
+                        elif (j + 7) > len(files[i]):
+                            new += files[i][j]
+                    files[i] = new
+                msg += smile_3 + ' ' + folder + str(i) + ' — ' + files[i] + '\n'
+            send_msg(event_func.message.peer_id, msg)
+        except FileNotFoundError:
+            send_msg(event_func.message.peer_id, 'У вас нет файлов')
+            how_unload(event_func)
 
     def download_my_file(folder, number, event_func):
-        if folder == 'photo/':
-            file = (os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder))[int(number)]
-            upload = vk_api.VkUpload(vk)
-            photo = upload.photo_messages("./content/users/" + str(event_func.message.from_id) + '/' + folder + file)
-            owner_id = photo[0]['owner_id']
-            photo_id = photo[0]['id']
-            access_key = photo[0]['access_key']
-            attachment = f'photo{owner_id}_{photo_id}_{access_key}'
-            vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=attachment)
-        elif folder == 'doc/':
-            file = (os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder))[int(number)]
-            c = vk.docs.getMessagesUploadServer(type='doc', peer_id=event_func.message.peer_id)
-            b = requests.post(c['upload_url'], files={
-                'file': open("./content/users/" + str(event_func.message.from_id) + '/' + str(folder) + str(file), 'rb')})
-            result = json.loads(b.text)["file"]
-            js = vk.docs.save(file=result, title='Документ')
-            attachment = f'doc{js["doc"]["owner_id"]}_{js["doc"]["id"]}'
-            vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=attachment)
+        try:
+            if folder == 'photo/':
+                file = (os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder))[int(number)]
+                send_msg(event_func.message.peer_id, 'Выгружаем файл...')
+                upload = vk_api.VkUpload(vk)
+                photo = upload.photo_messages("./content/users/" + str(event_func.message.from_id) +
+                                              '/' + folder + file)
+                owner_id = photo[0]['owner_id']
+                photo_id = photo[0]['id']
+                access_key = photo[0]['access_key']
+                attachment = f'photo{owner_id}_{photo_id}_{access_key}'
+                vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=attachment)
+            elif folder == 'doc/':
+                file = (os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder))[int(number)]
+                send_msg(event_func.message.peer_id, 'Выгружаем файл...')
+                c = vk.docs.getMessagesUploadServer(type='doc', peer_id=event_func.message.peer_id)
+                b = requests.post(c['upload_url'], files={
+                    'file': open("./content/users/" + str(event_func.message.from_id) + '/' + str(folder) +
+                                 str(file), 'rb')})
+                result = json.loads(b.text)["file"]
+                js = vk.docs.save(file=result, title=file)
+                attachment = f'doc{js["doc"]["owner_id"]}_{js["doc"]["id"]}'
+                vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=attachment)
+            elif folder == 'graffiti/':
+                file = (os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder))[int(number)]
+                send_msg(event_func.message.peer_id, 'Выгружаем файл...')
+                c = vk.docs.getMessagesUploadServer(type='doc', peer_id=event_func.message.peer_id)
+                b = requests.post(c['upload_url'], files={
+                    'file': open("./content/users/" + str(event_func.message.from_id) + '/' + str(folder) +
+                                 str(file), 'rb')})
+                result = json.loads(b.text)["file"]
+                js = vk.docs.save(file=result, title=file)
+                attachment = f'graffiti{js["graffiti"]["owner_id"]}_{js["graffiti"]["id"]}'
+                vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=attachment)
+            elif folder == 'audio/':
+                file = (os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder))[int(number)]
+                send_msg(event_func.message.peer_id, 'Выгружаем файл...')
+                upload_url = \
+                vk.docs.getMessagesUploadServer(type="audio_message", peer_id=event_func.message.peer_id,
+                                                v="5.103")['upload_url']
+                request = requests.post(upload_url, files={
+                    'file': open("./content/users/" + str(event_func.message.from_id) +
+                                 '/' + folder + file, 'rb')}).json()
+                save = vk.docs.save(file=request['file'])['audio_message']
+                d = 'doc' + str(save['owner_id']) + '_' + str(save['id'])
+                vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, message=file, attachment=d)
+            elif folder == 'audio_message/':
+                file = (os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder))[int(number)]
+                send_msg(event_func.message.peer_id, 'Выгружаем файл...')
+                upload_url = vk.docs.getMessagesUploadServer(type="audio_message", peer_id=event_func.message.peer_id,
+                                                             v="5.103")['upload_url']
+                request = requests.post(upload_url, files={
+                    'file': open("./content/users/" + str(event_func.message.from_id) +
+                                 '/' + folder + file, 'rb')}).json()
+                save = vk.docs.save(file=request['file'])['audio_message']
+                d = 'doc' + str(save['owner_id']) + '_' + str(save['id'])
+                vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=d)
+        except IndexError:
+            send_msg(event_func.message.peer_id, 'Файл с таким номером не был найден...')
 
 except ValueError:
     print(ValueError)
