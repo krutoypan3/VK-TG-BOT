@@ -20,11 +20,21 @@ f.close()'''
 
 if __name__ == '__main__':
     try:
+        file_answer = {
+            'мои файлы': '',
+            'мои аудио': 'audio/',
+            'мои документы': 'doc/',
+            'мои граффити': 'graffiti/',
+            'мои фото': 'photo/',
+            'мои видео': 'video/'
+        }
+
         for event in longpoll.listen():  # Постоянный листинг сообщений
             if event.type == VkBotEventType.MESSAGE_NEW:  # Проверка на приход сообщения
                 if event.message.from_id > 0:  # Проверка на бота
                     def main(event_main):
                         text = event_main.message.text.lower()  # Что написал
+                        words = text.split()
                         count_attach = len(event_main.message["attachments"])  # Кол-во вложений
                         # print(event_main)
                         if count_attach > 0:  # Есть ли вложения
@@ -33,6 +43,19 @@ if __name__ == '__main__':
                             Func.thread_start(Dict.func_answer[text], event_main)
                         if text in Dict.keyboard:
                             Func.thread_start(Dict.keyboard[text], event_main)
+                        if text in file_answer:
+                            Func.my_files_list(file_answer[text], event_main)
+                        if 'скачать' in words:
+                            Func.send_msg(event_main.message.peer_id, 'Выгружаем файл...')
+                            number = ''
+                            folder = ''
+                            for i in range(len(words[1])):
+                                if '0' <= words[1][i] <= '9':
+                                    number += words[1][i]
+                                else:
+                                    folder += words[1][i]
+                            Func.download_my_file(folder, number, event_main)
+
                     Func.thread_start(main, event)
 
 
