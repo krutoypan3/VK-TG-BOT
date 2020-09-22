@@ -110,11 +110,35 @@ try:
             res = requests.get("http://api.openweathermap.org/data/2.5/weather",
                                params={'id': city_id, 'units': 'metric', 'lang': 'ru', 'APPID': appid})
             data = res.json()
+            print(data)
             Osadki = data['weather'][0]['description']
             Temp = data['main']['temp']
             Temp_min = data['main']['temp_min']
             Temp_max = data['main']['temp_max']
             Temp_fel = data['main']['feels_like']
+            Wind_speed = data['wind']['speed']
+            Wind_deg = data['wind']['deg']
+            print(Wind_deg)
+            if 0 <= Wind_deg <= 22:
+                Wind_deg = 'северный'
+            elif 23 <= Wind_deg <= 66:
+                Wind_deg = 'северо-восточный'
+            elif 67 <= Wind_deg <= 112:
+                Wind_deg = 'восточный'
+            elif 113 <= Wind_deg <= 158:
+                Wind_deg = 'юго-восточный'
+            elif 159 <= Wind_deg <= 203:
+                Wind_deg = 'южный'
+            elif 204 <= Wind_deg <= 248:
+                Wind_deg = 'юго-западный'
+            elif 249 <= Wind_deg <= 293:
+                Wind_deg = 'западный'
+            elif 294 <= Wind_deg <= 338:
+                Wind_deg = 'северо-западный'
+            elif 339 <= Wind_deg <= 360:
+                Wind_deg = 'северный'
+            print(Wind_deg)
+
             send_msg(event_func.message.peer_id, 'Температура в ' + str(s_city) + '\n' +
                      'Осадки: ' + str(Osadki) + '\nТемпература:\nминимальная: ' + str(Temp_min) + '°C\n'
                      'сейчас: ' + str(Temp) + '°C\nмаксимальная: ' + str(Temp_max) + '°C\n' +
@@ -178,64 +202,38 @@ try:
                 os.makedirs(r'content/users/' + str(event_func.message.from_id) + '/' + content_type + '/')
             except FileExistsError:  # Если есть - то есть
                 pass
-            if content_type == "doc":
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - документ")
-                url = event_func.message["attachments"][i]["doc"]["url"]
-                f = open(r'content/users/' + str(event_func.message.from_id) + '/doc/' +
-                         sumbol_windows(str(event_func.message["attachments"][i]["doc"]["title"])), "wb")
+
+            def func_save_mess(func_file_type, photo, func_content_name, func_content_type):
+                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - " + func_file_type)
+                if photo:
+                    url = event_func.message["attachments"][i]["photo"]
+                    url = url["sizes"][len(url["sizes"]) - 1]["url"]
+                else:
+                    url = event_func.message["attachments"][i][func_content_type]["url"]
+                f = open(
+                    r'content/users/' + str(event_func.message.from_id) + '/' + func_content_type + '/' +
+                    func_content_name, "wb")
                 ufr = requests.get(url)  # делаем запрос
                 f.write(ufr.content)  # записываем содержимое в файл; как видите - content запроса
                 f.close()
                 send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + ' - ' +
-                         str(event_func.message["attachments"][i]["doc"]["title"]) + " успешно сохранен")
+                         func_content_name + " успешно сохранен")
 
-            elif content_type == "audio":  # Если это музыка
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - музыка")
-                url = event_func.message["attachments"][i]["audio"]["url"]
-                artist = sumbol_windows(event_func.message["attachments"][i]["audio"]["artist"])
-                title = sumbol_windows(event_func.message["attachments"][i]["audio"]["title"])
-                f = open(r'content/users/' + str(event_func.message.from_id) + '/audio/' + str(artist) + ' — '
-                         + str(title) + '.mp3', "wb")
-                ufr = requests.get(url)  # делаем запрос
-                f.write(ufr.content)  # записываем содержимое в файл; как видите - content запроса
-                f.close()
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " успешно сохранен")
-
-            elif content_type == "photo":  # Если это фото
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - фотография")
-                url = event_func.message["attachments"][i]["photo"]
-                url = url["sizes"][len(url["sizes"]) - 1]["url"]
-                f = open(r'' + str('content/users/' + str(event_func.message.from_id) + '/photo/' +
-                                   str(time.time()) + '.png'), "wb")
-                ufr = requests.get(url)  # делаем запрос
-                f.write(ufr.content)  # записываем содержимое в файл
-                f.close()
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " успешно сохранен")
-
+            if content_type == "doc":
+                func_save_mess('документ', 0, str(event_func.message["attachments"][i][content_type]["title"]), content_type)
+            elif content_type == "audio":
+                audio = event_func.message["attachments"][i]["audio"]
+                func_save_mess('музыка', 0, str(sumbol_windows(audio["artist"])) + ' — '
+                               + str(sumbol_windows(audio["title"])) + '.mp3', content_type)
+            elif content_type == "photo":
+                func_save_mess('фотография', 1, str(time.time()) + '.png', content_type)
+            elif content_type == "graffiti":
+                func_save_mess('граффити', 0, str(event_func.message["attachments"][i]["graffiti"]["id"]), content_type)
+            elif content_type == 'audio_message':
+                func_save_mess('голосовое сообщение', 0, str(time.time()) + '.mp3', content_type)
             elif content_type == "video":  # Если это фото
                 send_msg(event_func.message["peer_id"], 'Отправьте пожалуйста видео как документ')
 
-            elif content_type == "graffiti":
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - граффити")
-                url = event_func.message["attachments"][i]["graffiti"]["url"]
-                f = open(r'content/users/' + str(event_func.message.from_id) + '/graffiti/' +
-                         sumbol_windows(str(event_func.message["attachments"][i]["graffiti"]["id"])) + '.png', "wb")
-                ufr = requests.get(url)  # делаем запрос
-                f.write(ufr.content)  # записываем содержимое в файл; как видите - content запроса
-                f.close()
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + ' - ' +
-                         str(event_func.message["attachments"][i]["graffiti"]["id"]) + " успешно сохранен")
-
-            elif content_type == "audio_message":
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " тип - голосовое сообщение")
-                url = event_func.message["attachments"][i]["audio_message"]["link_mp3"]
-                title = time.time()
-                f = open(r'content/users/' + str(event_func.message.from_id) +
-                         '/audio_message/' + str(title) + '.mp3', "wb")
-                ufr = requests.get(url)  # делаем запрос
-                f.write(ufr.content)  # записываем содержимое в файл; как видите - content запроса
-                f.close()
-                send_msg(event_func.message["peer_id"], "Файл №" + str(i + 1) + " успешно сохранен")
 
 
     def my_files_list(folder, event_func):
@@ -304,8 +302,7 @@ try:
             elif folder == 'audio/':
                 file = (os.listdir("./content/users/" + str(event_func.message.from_id) + '/' + folder))[int(number)]
                 send_msg(event_func.message.peer_id, 'Выгружаем файл...')
-                upload_url = \
-                vk.docs.getMessagesUploadServer(type="audio_message", peer_id=event_func.message.peer_id,
+                upload_url = vk.docs.getMessagesUploadServer(type="audio_message", peer_id=event_func.message.peer_id,
                                                 v="5.103")['upload_url']
                 request = requests.post(upload_url, files={
                     'file': open("./content/users/" + str(event_func.message.from_id) +
