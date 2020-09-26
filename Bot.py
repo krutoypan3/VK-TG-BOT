@@ -70,6 +70,8 @@ if __name__ == '__main__':
                                 if Func.user_in_db(event_main.message.from_id):
                                     Func.logout(event_main)
                                 reg_or_log.remove(event_main.message.from_id)
+                        if words[0] == 'коронавирус':
+                            Func.Covid(event_main)
                         time.sleep(2)
                         try:
                             last_messages.remove(event_main.message.from_id)

@@ -11,6 +11,7 @@ from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 import Dict
+from googletrans import Translator
 
 API_GROUP_KEY = "ccbc9abae2f2a2cd3ade51c6f018c4f4ae36222ab438d484e4f730d5037df411d5a294300d24a1d865b95"
 API_SERVICE_KEY = "df8dbcb4df8dbcb4df8dbcb474dffe6b17ddf8ddf8dbcb480d4dd8c2633bc61379a4b76"
@@ -24,6 +25,7 @@ eventhr = []
 kolpot = -1
 group_sob = "@198599965"  # Указываем короткое имя бота (если нет то id)
 group_name = "Братик"  # Указываем название сообщества
+translator = Translator()
 
 # Авторизация под именем сообщества
 vk_session = vk_api.VkApi(token=API_GROUP_KEY)
@@ -46,6 +48,51 @@ try:
         kolpot += 1
         eventhr.append(kolpot)
         x.start()
+
+    def translate(text, lang):
+        try:
+            result = translator.translate(str(text), dest=lang).text
+            return result
+        except Exception as error:
+            print(Exception)
+
+    def Covid(event):
+        words = event.message.text.lower().split()
+        if len(words) > 1:
+            if words[1] == 'америка':
+                country = 'USA'
+            else:
+                country = translate(words[1], 'en')
+        else:
+            country = 'Russia'
+        url = "https://covid-193.p.rapidapi.com/statistics"
+
+        headers = {
+            'x-rapidapi-host': "covid-193.p.rapidapi.com",
+            'x-rapidapi-key': "5a42fd676cmsh120861aa5715a2cp16f89ejsn6269c9e5abc8"
+        }
+
+        response = requests.request("GET", url, headers=headers)
+        data = response.json()['response']
+        a = False
+        for i in range(len(data)):
+            if data[i]['country'] == country:
+                send_msg(event.message.peer_id, '&#9763;' + translate(str(data[i]['country']), 'ru') +
+                         ' - информация по коронавирусу на ' +
+                         data[i]['day'] + '&#9763;' +
+                         '\n&#128106;Население страны: ' + str(data[i]['population']) +
+                         '\n\n&#128554;Заболевших сегодня: ' + str(data[i]['cases']['new']) +
+                         '\n&#128567;Болеющих данный момент: ' + str(data[i]['cases']['active']) +
+                         '\n&#128583;Выздоровело: ' + str(data[i]['cases']['recovered']) +
+                         '\n\n&#128565;Умерло: ' +
+                         '\n&#128534;-сегодня: ' + str(data[i]['deaths']['new']) +
+                         '\n&#128555;-всего: ' + str(data[i]['deaths']['total']) +
+                         '\n\n&#9762;Всего: ' + str(data[i]['cases']['total']) + '&#9762;' +
+                         '\n\nДля получения информации о конкретной стране, напишите "коронавирус (страна)"' +
+                         '\nАктуальные данные предоставлены сайтом https://rapidapi.com/')
+                a = True
+        if not a:
+            send_msg(event.message.peer_id, 'Извините, но информация о ситуации в данной стране мне неизвестна')
 
     # Авторизация
     def autorize(event):
@@ -212,6 +259,7 @@ try:
             Wind_deg = data['wind']['deg']
             sunrise = time.ctime(data['sys']['sunrise']).split()[3]  # Восход
             sunset = time.ctime(data['sys']['sunset']).split()[3]  # Закат
+            print(data)
             if 0 <= Wind_deg <= 22:
                 Wind_deg = 'северный'
             elif 23 <= Wind_deg <= 66:
