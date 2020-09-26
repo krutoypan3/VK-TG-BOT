@@ -144,7 +144,8 @@ try:
                 else:
                     entities = UserName, Password, vk_id, None
                     SQL_DB.sql_insert(SQL_DB.con, entities)
-                    send_msg(event.message.peer_id, 'Регистрация прошла успешно!\nЛогин: ' + UserName + '\nПароль: ' + Password)
+                    send_msg(event.message.peer_id, 'Регистрация прошла успешно!\nЛогин: ' + UserName +
+                             '\nПароль: ' + Password)
                     main_keyboard(event)
 
     # Отправка сообщения пользователю
@@ -163,7 +164,6 @@ try:
                 '&#128182; 1 EUR = ' + str(EUR) + ' Российский рублей'
         send_msg(peer_id, forex)
 
-        # Личная диалог или беседа
 
     # Личка или беседа
     def lich_or_beseda(my_peer):
@@ -198,22 +198,20 @@ try:
                                params={'q': s_city, 'type': 'like', 'units': 'metric', 'APPID': appid})
             data = res.json()
             city_id = data['list'][0]['id']
-        except Exception as e:
-            print("Exception (find):", e)
+        except Exception as error:
+            print("Exception (find):", error)
             pass
         try:
             res = requests.get("http://api.openweathermap.org/data/2.5/weather",
                                params={'id': city_id, 'units': 'metric', 'lang': 'ru', 'APPID': appid})
             data = res.json()
-            print(data)
             Osadki = data['weather'][0]['description']
             Temp = data['main']['temp']
-            Temp_min = data['main']['temp_min']
-            Temp_max = data['main']['temp_max']
             Temp_fel = data['main']['feels_like']
             Wind_speed = data['wind']['speed']
             Wind_deg = data['wind']['deg']
-            print(Wind_deg)
+            sunrise = time.ctime(data['sys']['sunrise']).split()[3]  # Восход
+            sunset = time.ctime(data['sys']['sunset']).split()[3]  # Закат
             if 0 <= Wind_deg <= 22:
                 Wind_deg = 'северный'
             elif 23 <= Wind_deg <= 66:
@@ -232,12 +230,13 @@ try:
                 Wind_deg = 'северо-западный'
             elif 339 <= Wind_deg <= 360:
                 Wind_deg = 'северный'
-            send_msg(event_func.message.peer_id, 'Температура в ' + str(s_city) + '\n' +
-                     'Осадки: ' + str(Osadki) + '\nТемпература:\nминимальная: ' + str(Temp_min) + '°C\n'
-                     'сейчас: ' + str(Temp) + '°C\nмаксимальная: ' + str(Temp_max) + '°C\n' +
-                     'ощущается как: ' + str(Temp_fel) + '°C\nветер: ' + Wind_deg)
-        except Exception as e:
-            print("Exception (weather):", e)
+            send_msg(event_func.message.peer_id, '&#127961;Погода в ' + str(data['name']) + '\n' +
+                         '&#9925;Осадки: ' + str(Osadki) + '\n&#127777;Температура: ' + str(Temp) + '°C\n' +
+                         '&#128583;ощущается как: ' + str(Temp_fel) + '°C\n&#127788;ветер: ' + Wind_deg + ' ' +
+                     str(Wind_speed) + ' м/с' + '\n&#127749;рассвет: ' + str(sunrise) + '\n&#127748;закат: ' + str(sunset))
+        except Exception as error:
+            print("Exception (weather):", error)
+            send_msg(event_func.message.peer_id, 'Извините, но я не знаю о таком месте...')
             pass
 
     # Главная клавиатура
@@ -400,8 +399,7 @@ try:
                     file = (os.listdir("./content/users/" + str(UserName) + '/' + folder))[int(number)]
                     send_msg(event_func.message.peer_id, 'Выгружаем файл...')
                     upload = vk_api.VkUpload(vk)
-                    photo = upload.photo_messages("./content/users/" + str(UserName) +
-                                                  '/' + folder + file)
+                    photo = upload.photo_messages("./content/users/" + str(UserName) + '/' + folder + file)
                     owner_id = photo[0]['owner_id']
                     photo_id = photo[0]['id']
                     access_key = photo[0]['access_key']
