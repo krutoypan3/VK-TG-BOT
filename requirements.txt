@@ -1,0 +1,5 @@
+git+https://github.com/chebotarevmichael/vk_api
+requests~=2.24.0
+urllib3~=1.25.9
+python-dotenv~=0.14.0
+pyodbc~=4.0.30
