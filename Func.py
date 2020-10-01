@@ -54,9 +54,9 @@ try:
             result = translator.translate(str(text), dest=lang).text
             return result
         except Exception as error:
-            print(Exception)
+            print(error)
 
-    def Covid(event):
+    def covid(event):
         words = event.message.text.lower().split()
         if len(words) > 1:
             if words[1] == 'америка':
@@ -65,14 +65,14 @@ try:
                 country = translate(words[1], 'en')
         else:
             country = 'Russia'
-        url = "https://covid-193.p.rapidapi.com/statistics"
+        url_covid = "https://covid-193.p.rapidapi.com/statistics"
 
         headers = {
             'x-rapidapi-host': "covid-193.p.rapidapi.com",
             'x-rapidapi-key': "5a42fd676cmsh120861aa5715a2cp16f89ejsn6269c9e5abc8"
         }
 
-        response = requests.request("GET", url, headers=headers)
+        response = requests.request("GET", url_covid, headers=headers)
         data = response.json()['response']
         a = False
         for i in range(len(data)):
@@ -102,28 +102,31 @@ try:
         send_msg(event.message.peer_id, 'Введите логин:')
         for event_login in longpoll.listen():  # Постоянный листинг сообщений
             if event_login.type == VkBotEventType.MESSAGE_NEW:  # Проверка на приход сообщения
-                if (timer + 180) > time.time():
-                    UserName = event_login.message.text.split()[0]
-                else:
-                    error = 1
-                break
+                if event.message.peer_id == event_login.message.peer_id:
+                    if (timer + 180) > time.time():
+                        UserName = event_login.message.text.split()[0]
+                    else:
+                        error = 1
+                    break
         if error:
             send_msg(event.message.peer_id, 'Время авторизации истекло!')
         else:
             send_msg(event.message.peer_id, 'Введите пароль:')
-            for event_register in longpoll.listen():  # Постоянный листинг сообщений
-                if event_register.type == VkBotEventType.MESSAGE_NEW:  # Проверка на приход сообщения
-                    if (timer + 180) > time.time():
-                        Password = event_register.message.text.split()[0]
-                        if SQL_DB.sql_fetch_user(SQL_DB.con, 'Password', UserName) == Password:
-                            send_msg(event.message.peer_id, 'Вы авторизовались под пользователем: ' + UserName + '!')
-                            SQL_DB.sql_update(SQL_DB.con, 'vk_id', event.message.from_id)
+            for event_login in longpoll.listen():  # Постоянный листинг сообщений
+                if event_login.type == VkBotEventType.MESSAGE_NEW:  # Проверка на приход сообщения
+                    if event.message.peer_id == event_login.message.peer_id:
+                        if (timer + 180) > time.time():
+                            Password = event_login.message.text.split()[0]
+                            if SQL_DB.sql_fetch_user(SQL_DB.con, 'Password', UserName) == Password:
+                                send_msg(event.message.peer_id, 'Вы авторизовались под пользователем: ' +
+                                         UserName + '!')
+                                SQL_DB.sql_update(SQL_DB.con, 'vk_id', event.message.from_id)
+                            else:
+                                send_msg(event.message.peer_id, 'Неверная связка логин/пароль')
+                            break
                         else:
-                            send_msg(event.message.peer_id, 'Неверная связка логин/пароль')
-                        break
-                    else:
-                        error = 1
-                        break
+                            error = 1
+                            break
             if error:
                 send_msg(event.message.peer_id, 'Время авторизации истекло!')
 
@@ -131,13 +134,13 @@ try:
     def logout(event):
         UserName = SQL_DB.sql_fetch(SQL_DB.con, 'UserName', event.message.from_id)
         send_msg(event.message.peer_id, 'Вы вышли из аккаунта ' + UserName + '!')
-        SQL_DB.sql_update(SQL_DB.con, 'vk_id', None)
+        SQL_DB.sql_update(SQL_DB.con, 'vk_id', 'None')
         main_keyboard(event)
 
     # Проверка на вход в аккаунт
     def user_in_db(user_id):
         UserName = SQL_DB.sql_fetch(SQL_DB.con, 'UserName', user_id)
-        if UserName is not None:
+        if UserName is not None or UserName != 'None':
             return UserName
         else:
             return None
@@ -152,23 +155,24 @@ try:
         send_msg(event.message.peer_id, 'Введите логин (не менее 4 и не более 16 символов):')
         for event_register in longpoll.listen():  # Постоянный листинг сообщений
             if event_register.type == VkBotEventType.MESSAGE_NEW:  # Проверка на приход сообщения
-                if (timer + 180) > time.time():
-                    UserName = event_register.message.text.split()[0]
-                    if UserName == sumbol_windows(UserName):
-                        if SQL_DB.sql_fetch_user(SQL_DB.con, 'UserName', UserName) == UserName:
-                            send_msg(event.message.peer_id, 'Пользователь с таким логином уже зарегистрирован'
+                if event.message.peer_id == event_register.message.peer_id:
+                    if (timer + 180) > time.time():
+                        UserName = event_register.message.text.split()[0]
+                        if UserName == sumbol_windows(UserName):
+                            if SQL_DB.sql_fetch_user(SQL_DB.con, 'UserName', UserName) == UserName:
+                                send_msg(event.message.peer_id, 'Пользователь с таким логином уже зарегистрирован'
+                                                                ': регистрация отменена')
+                                error = 2
+                            if 16 > len(UserName) < 3:
+                                error = 1
+                            break
+                        else:
+                            send_msg(event.message.peer_id, 'Имя пользователя содержит недопустимые символы'
                                                             ': регистрация отменена')
                             error = 2
-                        if 16 > len(UserName) < 3:
-                            error = 1
-                        break
                     else:
-                        send_msg(event.message.peer_id, 'Имя пользователя содержит недопустимые символы'
-                                                        ': регистрация отменена')
-                        error = 2
-                else:
-                    error = 1
-                    break
+                        error = 1
+                        break
         if error != 2:
             if error:
                 send_msg(event.message.peer_id, 'Ваш логин содержит менее 4 или более 16 символов: '
@@ -177,14 +181,15 @@ try:
                 send_msg(event.message.peer_id, 'Введите пароль (не менее 4 и не более 16 символов):')
                 for event_register in longpoll.listen():  # Постоянный листинг сообщений
                     if event_register.type == VkBotEventType.MESSAGE_NEW:  # Проверка на приход сообщения
-                        if (timer + 180) > time.time():
-                            Password = event_register.message.text.split()[0]
-                            if 16 > len(Password) < 3:
+                        if event.message.peer_id == event_register.message.peer_id:
+                            if (timer + 180) > time.time():
+                                Password = event_register.message.text.split()[0]
+                                if 16 > len(Password) < 3:
+                                    error = 1
+                                break
+                            else:
                                 error = 1
-                            break
-                        else:
-                            error = 1
-                            break
+                                break
                 if error:
                     send_msg(event.message.peer_id,
                              'Ваш пароль содержит менее 4 или более 16 символов: регистрация отменена')
@@ -281,7 +286,8 @@ try:
             send_msg(event_func.message.peer_id, '&#127961;Погода в ' + str(data['name']) + '\n' +
                          '&#9925;Осадки: ' + str(Osadki) + '\n&#127777;Температура: ' + str(Temp) + '°C\n' +
                          '&#128583;ощущается как: ' + str(Temp_fel) + '°C\n&#127788;ветер: ' + Wind_deg + ' ' +
-                     str(Wind_speed) + ' м/с' + '\n&#127749;рассвет: ' + str(sunrise) + '\n&#127748;закат: ' + str(sunset))
+                     str(Wind_speed) + ' м/с' + '\n&#127749;рассвет: ' + str(sunrise) + '\n&#127748;закат: ' +
+                     str(sunset))
         except Exception as error:
             print("Exception (weather):", error)
             send_msg(event_func.message.peer_id, 'Извините, но я не знаю о таком месте...')
@@ -310,7 +316,7 @@ try:
     def my_files_keyboard(event_func):
         my_peer = event_func.message.peer_id
         if lich_or_beseda(my_peer):
-            UserName = SQL_DB.sql_fetch(SQL_DB.con, 'UserName', event_func.message.from_id)
+            UserName = user_in_db(event_func.message.from_id)
             if UserName is not None:
                 keyboard = VkKeyboard(one_time=False)
                 # keyboard.add_button('аниме(в разработке)', color=VkKeyboardColor.NEGATIVE)
@@ -330,7 +336,7 @@ try:
     def my_files_keyboard_content(event_func):
         my_peer = event_func.message.peer_id
         if lich_or_beseda(my_peer):
-            UserName = SQL_DB.sql_fetch(SQL_DB.con, 'UserName', event_func.message.from_id)
+            UserName = user_in_db(event_func.message.from_id)
             if UserName is None:
                 send_msg(event_func.message.from_id, 'Вы не авторизированы!')
             else:
@@ -357,14 +363,15 @@ try:
 
     # Сохранение файлов в боте
     def save_file(event_func, count_attach):
-        UserName = SQL_DB.sql_fetch(SQL_DB.con, 'UserName', event_func.message.from_id)
+        UserName = user_in_db(event_func.message.from_id)
         if UserName is None:
             send_msg(event_func.message.from_id, 'Вы не авторизированы!')
         else:
             for i in range(count_attach):  # Пробег по всем вложениям
                 content_type = event_func.message["attachments"][i]["type"]  # Определение типа контента
                 try:  # Если папка нет, то она появится
-                    os.makedirs(r'content/users/' + str(UserName) + '/' + content_type + '/')
+                    os.makedirs(r'../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/' +
+                                str(UserName) + '/' + content_type + '/')
                 except FileExistsError:  # Если есть - то есть
                     pass
 
@@ -375,11 +382,17 @@ try:
                         url = url["sizes"][len(url["sizes"]) - 1]["url"]
                     elif photo == 2:
                         url = event_func.message["attachments"][i][func_content_type]['link_mp3']
+                        func_content_type = 'voice'
+                    elif photo == 3:
+                        url = event_func.message["attachments"][i][func_content_type]["url"]
+                        func_content_type = 'audio'
+                    elif photo == 4:
+                        url = event_func.message["attachments"][i][func_content_type]["url"]
+                        func_content_type = 'document'
                     else:
                         url = event_func.message["attachments"][i][func_content_type]["url"]
-                    f = open(
-                        r'content/users/' + str(UserName) + '/' + func_content_type + '/' +
-                        func_content_name, "wb")
+                    f = open(r'../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/' +
+                             str(UserName) + '/' + func_content_type + '/' + func_content_name, "wb")
                     ufr = requests.get(url)  # делаем запрос
                     f.write(ufr.content)  # записываем содержимое в файл; как видите - content запроса
                     f.close()
@@ -387,11 +400,11 @@ try:
                              func_content_name + " успешно сохранен")
 
                 if content_type == "doc":
-                    func_save_mess('документ', 0, str(event_func.message["attachments"][i][content_type]["title"]),
+                    func_save_mess('документ', 4, str(event_func.message["attachments"][i][content_type]["title"]),
                                    content_type)
                 elif content_type == "audio":
                     audio = event_func.message["attachments"][i]["audio"]
-                    func_save_mess('музыка', 0, str(sumbol_windows(audio["artist"])) + ' — '
+                    func_save_mess('музыка', 3, str(sumbol_windows(audio["artist"])) + ' — '
                                    + str(sumbol_windows(audio["title"])) + '.mp3', content_type)
                 elif content_type == "photo":
                     func_save_mess('фотография', 1, str(time.time()) + '.png', content_type)
@@ -406,11 +419,12 @@ try:
     # Вывод списка файлов пользователя
     def my_files_list(folder, event_func):
         try:
-            UserName = SQL_DB.sql_fetch(SQL_DB.con, 'UserName', event_func.message.from_id)
+            UserName = user_in_db(event_func.message.from_id)
             if UserName is None:
                 send_msg(event_func.message.from_id, 'Вы не авторизированы!')
             else:
-                files = os.listdir("./content/users/" + str(UserName) + '/' + folder)
+                files = os.listdir("../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/"
+                                   + str(UserName) + '/' + folder)
                 if folder == '':
                     smile = '/'
                     smile_2 = '&#128194;'
@@ -439,61 +453,73 @@ try:
     # Выгрузка файлов из бота
     def download_my_file(folder, number, event_func):
         try:
-            UserName = SQL_DB.sql_fetch(SQL_DB.con, 'UserName', event_func.message.from_id)
+            UserName = user_in_db(event_func.message.from_id)
             if UserName is None:
                 send_msg(event_func.message.from_id, 'Вы не авторизированы!')
             else:
                 if folder == 'photo/':
-                    file = (os.listdir("./content/users/" + str(UserName) + '/' + folder))[int(number)]
+                    file = (os.listdir(
+                        "../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/" +
+                        str(UserName) + '/' + folder))[int(number)]
                     send_msg(event_func.message.peer_id, 'Выгружаем файл...')
                     upload = vk_api.VkUpload(vk)
-                    photo = upload.photo_messages("./content/users/" + str(UserName) + '/' + folder + file)
+                    photo = upload.photo_messages(
+                        "../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/" +
+                        str(UserName) + '/' + folder + file)
                     owner_id = photo[0]['owner_id']
                     photo_id = photo[0]['id']
                     access_key = photo[0]['access_key']
                     attachment = f'photo{owner_id}_{photo_id}_{access_key}'
                     vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=attachment)
-                elif folder == 'doc/':
-                    file = (os.listdir("./content/users/" + str(UserName) + '/' + folder))[int(number)]
+                elif folder == 'document/':
+                    file = (os.listdir(
+                        "../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/" +
+                        str(UserName) + '/' + folder))[int(number)]
                     send_msg(event_func.message.peer_id, 'Выгружаем файл...')
                     c = vk.docs.getMessagesUploadServer(type='doc', peer_id=event_func.message.peer_id)
                     b = requests.post(c['upload_url'], files={
-                        'file': open("./content/users/" + str(UserName) + '/' + str(folder) +
-                                     str(file), 'rb')})
+                        'file': open("../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/"
+                                     + str(UserName) + '/' + str(folder) + str(file), 'rb')})
                     result = json.loads(b.text)["file"]
                     js = vk.docs.save(file=result, title=file)
                     attachment = f'doc{js["doc"]["owner_id"]}_{js["doc"]["id"]}'
                     vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=attachment)
                 elif folder == 'graffiti/':
-                    file = (os.listdir("./content/users/" + str(UserName) + '/' + folder))[int(number)]
+                    file = (os.listdir(
+                        "../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/" +
+                        str(UserName) + '/' + folder))[int(number)]
                     send_msg(event_func.message.peer_id, 'Выгружаем файл...')
                     c = vk.docs.getMessagesUploadServer(type='doc', peer_id=event_func.message.peer_id)
                     b = requests.post(c['upload_url'], files={
-                        'file': open("./content/users/" + str(UserName) + '/' + str(folder) +
-                                     str(file) + '.png', 'rb')})
+                        'file': open("../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/"
+                                     + str(UserName) + '/' + str(folder) + str(file) + '.png', 'rb')})
                     result = json.loads(b.text)["file"]
                     js = vk.docs.save(file=result, title=file)
                     attachment = f'graffiti{js["graffiti"]["owner_id"]}_{js["graffiti"]["id"]}'
                     vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=attachment)
                 elif folder == 'audio/':
-                    file = (os.listdir("./content/users/" + str(UserName) + '/' + folder))[int(number)]
+                    file = (os.listdir(
+                        "../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/" +
+                        str(UserName) + '/' + folder))[int(number)]
                     send_msg(event_func.message.peer_id, 'Выгружаем файл...')
                     upload_url = vk.docs.getMessagesUploadServer(
                         type="audio_message", peer_id=event_func.message.peer_id, v="5.103")['upload_url']
                     request = requests.post(upload_url, files={
-                        'file': open("./content/users/" + str(UserName) +
-                                     '/' + folder + file, 'rb')}).json()
+                        'file': open("../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/"
+                                     + str(UserName) + '/' + folder + file, 'rb')}).json()
                     save = vk.docs.save(file=request['file'])['audio_message']
                     d = 'doc' + str(save['owner_id']) + '_' + str(save['id'])
                     vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, message=file, attachment=d)
-                elif folder == 'audio_message/':
-                    file = (os.listdir("./content/users/" + str(UserName) + '/' + folder))[int(number)]
+                elif folder == 'voice/':
+                    file = (os.listdir(
+                        "../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/" +
+                        str(UserName) + '/' + folder))[int(number)]
                     send_msg(event_func.message.peer_id, 'Выгружаем файл...')
                     upload_url = vk.docs.getMessagesUploadServer(
                         type="audio_message", peer_id=event_func.message.peer_id, v="5.103")['upload_url']
                     request = requests.post(upload_url, files={
-                        'file': open("./content/users/" + str(UserName) +
-                                     '/' + folder + file, 'rb')}).json()
+                        'file': open("../TelegramBotIQ/TelegramBotIQ/bin/Debug/netcoreapp3.1/TelegramBotIQ Users File/"
+                                     + str(UserName) + '/' + folder + file, 'rb')}).json()
                     save = vk.docs.save(file=request['file'])['audio_message']
                     d = 'doc' + str(save['owner_id']) + '_' + str(save['id'])
                     vk.messages.send(peer_id=event_func.message.peer_id, random_id=0, attachment=d)

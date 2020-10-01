@@ -12,20 +12,20 @@ func_answer = {'курс': Func.curs_value,
 file_answer = {
     'мои файлы': '',
     'аудио': 'audio/',
-    'документы': 'doc/',
+    'документы': 'document/',
     'граффити': 'graffiti/',
     'фото': 'photo/',
     'видео': 'video/',
-    'гс': 'audio_message/'
+    'гс': 'voice/'
 }
 smile_list = {
     'audio/': '&#127925;',
     'photo/': '&#128247;',
     'video/': '&#127916;',
-    'doc/': '&#128190;',
+    'document/': '&#128190;',
     'graffiti/': '&#127912;',
     '': '',
-    'audio_message/': '&#127908;'
+    'voice/': '&#127908;'
 }
 
 keyboard = {
