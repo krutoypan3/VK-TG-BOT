@@ -9,6 +9,9 @@ func_answer = {'курс': Func.curs_value,
                'погода': Func.weather,
                'как скачать?': Func.how_download,
                'как отправить?': Func.how_unload}
+func_answer_more_word = {'коронавирус': Func.covid,
+                         'погода': Func.weather}
+
 file_answer = {
     'мои файлы': '',
     'аудио': 'audio/',

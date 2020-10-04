@@ -71,8 +71,7 @@ if __name__ == '__main__':
                                     Func.logout(event_main)
                                 reg_or_log.remove(event_main.message.from_id)
                         if len(words) > 0:
-                            if words[0] == 'коронавирус':
-                                Func.covid(event_main)
+                            Func.thread_start(Dict.func_answer_more_word[words[0]], event_main)
                         time.sleep(2)
                         try:
                             last_messages.remove(event_main.message.from_id)
