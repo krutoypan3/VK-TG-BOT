@@ -71,7 +71,10 @@ if __name__ == '__main__':
                                     Func.logout(event_main)
                                 reg_or_log.remove(event_main.message.from_id)
                         if len(words) > 0:
-                            Func.thread_start(Dict.func_answer_more_word[words[0]], event_main)
+                            try:
+                                Func.thread_start(Dict.func_answer_more_word[words[0]], event_main)
+                            except KeyError:
+                                pass
                         time.sleep(2)
                         try:
                             last_messages.remove(event_main.message.from_id)
@@ -80,5 +83,5 @@ if __name__ == '__main__':
                     Func.thread_start(main, event)
 
 
-    except ValueError:
-        print(ValueError)
+    except Exception as ERROR:
+        print(ERROR)

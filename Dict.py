@@ -8,7 +8,19 @@ func_answer = {'курс': Func.curs_value,
                'usd': Func.curs_value,
                'погода': Func.weather,
                'как скачать?': Func.how_download,
-               'как отправить?': Func.how_unload}
+               'как отправить?': Func.how_unload,
+               'онгоинги': Func.AnimeGo_Ongoings,
+               'онгоинг': Func.AnimeGo_Ongoings,
+               'выходит': Func.AnimeGo_Ongoings,
+               'что выходит': Func.AnimeGo_Ongoings,
+               'онг': Func.AnimeGo_Ongoings,
+               'случайное аниме': Func.AnimeGo_Finish,
+               'посоветуй аниме': Func.AnimeGo_Finish,
+               'посоветуй фильм': Func.Film_popular,
+               'фильм': Func.Film_popular,
+               'популярный фильм': Func.Film_popular,
+               'популярные фильмы': Func.Film_popular,
+               'популярное': Func.Film_popular}
 func_answer_more_word = {'коронавирус': Func.covid,
                          'погода': Func.weather}
 

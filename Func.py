@@ -1,11 +1,14 @@
 import datetime
 import json
 import os
+import random
 import re
 import threading
 import time
 import requests
 import vk_api
+import AnimeGoParser
+import KinoPoisk
 import SQL_DB
 from vk_api.bot_longpoll import VkBotLongPoll, VkBotEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
@@ -39,6 +42,12 @@ vk_session_SERVISE.server_auth()
 vk_SERVISE = vk_session_SERVISE.get_api()
 vk_session_SERVISE.token = {'access_token': API_SERVICE_KEY, 'expires_in': 0}
 
+print('Импортируем список онгоингов...')
+AnimeOngoing = AnimeGoParser.AnimeGo('ongoing').random_anime()
+print('Импортируем список всех аниме...')
+AnimeFinish = AnimeGoParser.AnimeGo('finish').random_anime()
+print('Бот работает...')
+
 try:
     # Запуск потока с одним аргрументом
     def thread_start(Func, *args):
@@ -48,6 +57,99 @@ try:
         kolpot += 1
         eventhr.append(kolpot)
         x.start()
+
+    def Film_popular(*args):
+        film = KinoPoisk.get_random_popular()
+        # Загрузка фото на комп
+        p = requests.get(film[4])
+        out = open("film.jpg", "wb")
+        out.write(p.content)
+        out.close()
+
+        # Отправка фото в ВК:
+        upload = vk_api.VkUpload(vk)
+        photo = upload.photo_messages('film.jpg')
+        owner_id = photo[0]['owner_id']
+        photo_id = photo[0]['id']
+        access_key = photo[0]['access_key']
+        attachment = f'photo{owner_id}_{photo_id}_{access_key}'
+
+        film_janr = ''
+        for i in film[6]:
+            film_janr += i + ', '
+
+        vk.messages.send(peer_id=args[0].message.peer_id, random_id=0, attachment=attachment,
+                         message='Название: ' + film[0] + '\nРейтинг: ' + str(film[5]) + '\nДата премьеры: ' +
+                                 str(film[2]) + '\nЖанры: ' + film_janr + '\n\n' + 'Описание:\n' + film[1] +
+                                 '\n\nСсылка на фильм: ' + film[7])
+
+
+
+    def AnimeGo_Finish(*args):
+        id_anime = random.randint(0, len(AnimeFinish) - 1)
+        name = AnimeFinish[id_anime][0]
+        pict = AnimeFinish[id_anime][1]
+        url = AnimeFinish[id_anime][2]
+        dics = AnimeFinish[id_anime][3]
+        anime_type = AnimeFinish[id_anime][4]
+        anime_year = AnimeFinish[id_anime][5]
+        anime_janrs = AnimeFinish[id_anime][6]
+        anime_janr = ''
+        for i in anime_janrs:
+            anime_janr += i + ', '
+        anime_reit = AnimeFinish[id_anime][7]
+
+        # Загрузка фото на комп
+        p = requests.get(pict)
+        out = open("ongoing.jpg", "wb")
+        out.write(p.content)
+        out.close()
+
+        # Отправка фото в ВК:
+        upload = vk_api.VkUpload(vk)
+        photo = upload.photo_messages('ongoing.jpg')
+        owner_id = photo[0]['owner_id']
+        photo_id = photo[0]['id']
+        access_key = photo[0]['access_key']
+        attachment = f'photo{owner_id}_{photo_id}_{access_key}'
+
+        vk.messages.send(peer_id=args[0].message.peer_id, random_id=0, attachment=attachment,
+                         message='Название: ' + name + '\nРейтинг: ' + anime_reit + '⭐\nТип аниме: ' + anime_type + '\nГод показа: ' + anime_year +
+                                 '\nЖанр: ' + anime_janr + '\n\n' + dics + '\n\nСсылка на аниме: ' + url)
+
+
+    def AnimeGo_Ongoings(*args):
+        id_anime = random.randint(0, len(AnimeOngoing) - 1)
+        pict = AnimeOngoing[id_anime][1]
+        name = AnimeOngoing[id_anime][0]
+        dics = AnimeOngoing[id_anime][3]
+        url = AnimeOngoing[id_anime][2]
+        anime_type = AnimeOngoing[id_anime][4]
+        anime_year = AnimeOngoing[id_anime][5]
+        anime_janrs = AnimeOngoing[id_anime][6]
+        anime_janr = ''
+        for i in anime_janrs:
+            anime_janr += i + ', '
+        anime_reit = AnimeFinish[id_anime][7]
+
+        # Загрузка фото на комп
+        p = requests.get(pict)
+        out = open("ongoing.jpg", "wb")
+        out.write(p.content)
+        out.close()
+
+        # Отправка фото в ВК:
+        upload = vk_api.VkUpload(vk)
+        photo = upload.photo_messages('ongoing.jpg')
+        owner_id = photo[0]['owner_id']
+        photo_id = photo[0]['id']
+        access_key = photo[0]['access_key']
+        attachment = f'photo{owner_id}_{photo_id}_{access_key}'
+
+        vk.messages.send(peer_id=args[0].message.peer_id, random_id=0, attachment=attachment,
+                         message='Название: ' + name + '\nРейтинг: ' + anime_reit + '⭐\nТип аниме: ' + anime_type +
+                                 '\nГод показа: ' + anime_year +
+                                 '\nЖанр: ' + anime_janr + '\n\n' + dics + '\n\nСсылка на аниме: ' + url)
 
     def translate(text, lang):
         try:
@@ -303,6 +405,9 @@ try:
             keyboard.add_line()  # Отступ строки
             keyboard.add_button('Погода', color=VkKeyboardColor.PRIMARY)
             keyboard.add_line()  # Отступ строки
+            keyboard.add_button('Посоветуй аниме', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_button('Посоветуй фильм', color=VkKeyboardColor.PRIMARY)
+            keyboard.add_line()
             if user_in_db(event_func.message.from_id):
                 keyboard.add_button('Выйти', color=VkKeyboardColor.NEGATIVE)
             else:
